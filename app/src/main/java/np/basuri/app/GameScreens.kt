@@ -18,10 +18,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.TextStyle
-import java.time.temporal.WeekFields
 import java.util.Locale
 
 val Ember = Color(0xFFD9692B)
@@ -134,7 +134,8 @@ private fun days(n: Int) = "$n ${if (n == 1) "day" else "days"}"
 
 @Composable private fun MonthGrid(progress: Progress, month: YearMonth) {
     val today = LocalDate.now()
-    val firstDay = WeekFields.of(Locale.getDefault()).firstDayOfWeek
+    // Weeks run Sunday to Saturday in Nepal, whatever the phone's language.
+    val firstDay = DayOfWeek.SUNDAY
     val lead = Math.floorMod(month.atDay(1).dayOfWeek.value - firstDay.value, 7)
     val cells = List(lead) { null } + (1..month.lengthOfMonth()).map { month.atDay(it) }
     Row(Modifier.fillMaxWidth().padding(top = 8.dp)) {

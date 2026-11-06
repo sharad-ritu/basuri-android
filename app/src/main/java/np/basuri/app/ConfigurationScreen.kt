@@ -239,7 +239,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
             HorizontalDivider(Modifier.padding(vertical = 14.dp), color = Color(0xFFE3E7F1))
             ToggleRow("Streak saver", "At 21:30 if your streak would end tonight.", progress.streakSaver, vm::setStreakSaver)
             Spacer(Modifier.height(10.dp))
-            ToggleRow("Weekly summary", "Sunday evening: your days, lessons, and best streak.", progress.weeklyRecap, vm::setWeeklyRecap)
+            ToggleRow("Weekly summary", "Saturday evening: your week's days, lessons, and best streak.", progress.weeklyRecap, vm::setWeeklyRecap)
             TextButton(vm::sendTestReminder, enabled = !blocked, modifier = Modifier.heightIn(min = 48.dp).padding(top = 6.dp), contentPadding = PaddingValues(horizontal = 0.dp)) {
                 Icon(Icons.Rounded.NotificationsActive, null, Modifier.size(18.dp))
                 Text("Send a test reminder", modifier = Modifier.padding(start = 8.dp))

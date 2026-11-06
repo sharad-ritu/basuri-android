@@ -50,7 +50,7 @@ Set the actual note and scientific octave of Sa with the three finger holes near
 - **Practice** has two modes. **Find a note** matches one note. **Long tones** times how long you hold a note within 50 cents. A hold of 5 seconds counts as the day's warm-up. Only notes you have reached on the learn path are offered.
 - **Tools** has a tanpura drone at your Sa and a metronome with simple meters and taal presets. They can play together. Only metronome time counts toward the daily plan.
 - **Notation** explains Bhatkhande sargam and plays its read-along examples.
-- **My flute** holds your Sa and its fine tuning, daily goal, reminders (daily at a preset or custom time, a 21:30 streak saver, and a Sunday summary), and a reset option.
+- **My flute** holds your Sa and its fine tuning, daily goal, reminders (daily at a preset or custom time, a 21:30 streak saver, and a Saturday evening summary of the Sunday-to-Saturday week), and a reset option.
 
 A microphone pitch match requires 1.5 seconds within 35 cents of the selected reference. A flicker of under about 200 ms pauses the timer instead of resetting it. Choose **Practice without microphone** once to use self-guided mode for that lesson, then confirm each practiced note. Either kind of completed lesson counts toward the daily goal and the streak. The app stores progress and settings in private SharedPreferences. It does not save audio or upload data, and it requests no internet permission. Uninstalling clears progress.
 

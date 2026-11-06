@@ -25,7 +25,7 @@ data class Progress(
     val reminderMinutes: Int = -1,
     /** A late-evening nudge when a streak would end tonight. */
     val streakSaver: Boolean = true,
-    /** A Sunday evening summary of the week. */
+    /** A Saturday evening summary of the week (Sunday to Saturday, as in Nepal). */
     val weeklyRecap: Boolean = true,
     /** Seconds of metronome practice per day, kept for the daily plan and the weekly summary. */
     val rhythmDays: Map<LocalDate, Long> = emptyMap(),

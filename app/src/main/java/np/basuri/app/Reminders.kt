@@ -22,7 +22,7 @@ import java.time.temporal.TemporalAdjusters
  * and may arrive a few minutes late. Nothing is sent over the network.
  *  - Daily reminder at the learner's chosen time, skipped once a lesson is done that day.
  *  - Streak saver at 21:30 when a streak would end at midnight.
- *  - Weekly summary on Sunday at 19:00.
+ *  - Weekly summary on Saturday at 19:00, the end of the Nepali week (Sunday to Saturday).
  */
 object Reminders {
     const val OPEN = "open"
@@ -34,13 +34,15 @@ object Reminders {
     private const val ACTION_SNOOZE = "np.basuri.app.SNOOZE"
     private const val SAVER_MINUTES = 21 * 60 + 30
     private const val WEEKLY_MINUTES = 19 * 60
+    /** Saturday is Nepal's weekly holiday and the last day of its week. */
+    private val WEEKLY_DAY = DayOfWeek.SATURDAY
     private const val NOTIFY_DAILY = 1
     private const val NOTIFY_WEEKLY = 2
 
     private enum class Channel(val id: String, val title: String, val detail: String) {
         Daily("practice", "Daily reminder", "One reminder a day when no lesson is finished yet"),
         Saver("streak", "Streak saver", "A late-evening nudge when your streak would end tonight"),
-        Weekly("weekly", "Weekly summary", "Your practice week, on Sunday evening"),
+        Weekly("weekly", "Weekly summary", "Your practice week, on Saturday evening"),
     }
 
     val presets = listOf(8 * 60 to "Morning", 12 * 60 + 30 to "Midday", 18 * 60 + 30 to "Evening", 21 * 60 to "Night")
@@ -88,9 +90,9 @@ object Reminders {
         // The saver is redundant when the daily reminder is already late in the evening.
         set(context, ACTION_SAVER, 2, if (on && progress.streakSaver && progress.reminderMinutes < SAVER_MINUTES - 60) due(context, ACTION_SAVER, SAVER_MINUTES) else null)
         val now = ZonedDateTime.now()
-        val weekly = if (now.dayOfWeek == DayOfWeek.SUNDAY) due(context, ACTION_WEEKLY, WEEKLY_MINUTES, now)
-            else now.with(TemporalAdjusters.next(DayOfWeek.SUNDAY)).with(LocalTime.of(WEEKLY_MINUTES / 60, WEEKLY_MINUTES % 60))
-        set(context, ACTION_WEEKLY, 4, if (on && progress.weeklyRecap) (if (weekly.dayOfWeek == DayOfWeek.SUNDAY) weekly else weekly.with(TemporalAdjusters.next(DayOfWeek.SUNDAY))) else null)
+        val weekly = if (now.dayOfWeek == WEEKLY_DAY) due(context, ACTION_WEEKLY, WEEKLY_MINUTES, now)
+            else now.with(TemporalAdjusters.next(WEEKLY_DAY)).with(LocalTime.of(WEEKLY_MINUTES / 60, WEEKLY_MINUTES % 60))
+        set(context, ACTION_WEEKLY, 4, if (on && progress.weeklyRecap) (if (weekly.dayOfWeek == WEEKLY_DAY) weekly else weekly.with(TemporalAdjusters.next(WEEKLY_DAY))) else null)
     }
 
     /** False when the permission is missing (Android 13+) or notifications are blocked for the app in settings. */
