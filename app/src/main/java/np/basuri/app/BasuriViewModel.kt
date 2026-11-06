@@ -71,12 +71,11 @@ class BasuriViewModel(application: Application, private val saved: SavedStateHan
     /** The current day. [Progress] equality ignores the date, so date-dependent UI keys off this instead. */
     val today = _today.asStateFlow()
     fun refreshDay() { _progress.value = store.load(); _today.value = LocalDate.now() }
-    /** The last Sa the microphone found, so saving it can count as tuned. */
-    private var lastDetected: Flute? = null
-    fun configure(flute: Flute, goal: Int, finishOnboarding: Boolean) {
+    /** [detected] means this Sa came from the microphone, so the learner needn't be offered tuning again. */
+    fun configure(flute: Flute, goal: Int, finishOnboarding: Boolean, detected: Boolean = false) {
         stopAudio()
         val p = _progress.value
-        persist(p.copy(flute = flute, dailyGoal = goal, onboarded = p.onboarded || finishOnboarding, tunePromptDone = p.tunePromptDone || flute == lastDetected))
+        persist(p.copy(flute = flute, dailyGoal = goal, onboarded = p.onboarded || finishOnboarding, tunePromptDone = p.tunePromptDone || detected))
         navigate(if (finishOnboarding) Screen.Home else saved.get<Screen>("settingsReturn") ?: Screen.Home)
     }
     /** Metronome sessions shorter than ten seconds are treated as a test tap, not practice. */
@@ -232,7 +231,7 @@ class BasuriViewModel(application: Application, private val saved: SavedStateHan
                             withContext(Dispatchers.Main) {
                                 if (token != generation) return@withContext
                                 _saDetection.value = when {
-                                    result != null -> Flute.fromFrequency(result)?.let { lastDetected = it; SaDetection.Found(it, result) }
+                                    result != null -> Flute.fromFrequency(result)?.let { SaDetection.Found(it, result) }
                                         ?: SaDetection.Failed("Heard ${"%.0f".format(result)} Hz, which is outside C3–B5. Check that you played the three-hole Sa without overblowing.")
                                     timedOut -> SaDetection.Failed("No steady note yet. Close holes 1–3, blow gently, and hold the note for two seconds.")
                                     else -> { SaDetection.Listening((run.size / SA_FRAMES.toFloat()).coerceAtMost(1f), hz); return@withContext }
@@ -293,6 +292,8 @@ class BasuriViewModel(application: Application, private val saved: SavedStateHan
                                         if (sustain) {
                                             liveHold = held
                                             if (ended > 0) recordHold(ended)
+                                            // Count today's warm-up the moment it's earned, so the screen agrees and a killed app keeps it.
+                                            if (held >= Progress.WARMUP_MS && !_progress.value.warmedUp) persist(_progress.value.let { it.copy(warmupDays = it.warmupDays + LocalDate.now()) })
                                             _audio.value = AudioStatus.Listening(reading, (held / LONG_TONE_GOAL.toFloat()).coerceIn(0f, 1f), held)
                                         } else {
                                             _audio.value = AudioStatus.Listening(reading, (held / 1500f).coerceIn(0f, 1f), held)

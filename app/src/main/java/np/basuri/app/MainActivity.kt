@@ -73,7 +73,7 @@ class MainActivity : ComponentActivity() {
     // Each tab keeps its own saved state (metronome tempo, tanpura string, notation section) while you switch away.
     val tabs = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
     val owner = LocalLifecycleOwner.current
-    var exitLesson by remember { mutableStateOf(false) }
+    var exitLesson by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     DisposableEffect(owner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_STOP) vm.stopAudio()
@@ -90,20 +90,20 @@ class MainActivity : ComponentActivity() {
             else -> vm.navigate(Screen.Home)
         }
     }
-    // A new day recomposes everything that reads LocalDate.now(), even when saved progress is unchanged.
-    key(today) { Box(Modifier.fillMaxSize().background(if (screen == Screen.Welcome) Ink else Paper).safeDrawingPadding()) {
+    Box(Modifier.fillMaxSize().background(if (screen == Screen.Welcome) Ink else Paper).safeDrawingPadding()) {
         when (screen) {
             Screen.Welcome -> WelcomeScreen { vm.navigate(Screen.Setup) }
-            Screen.Setup -> Configuration(progress, true, { vm.navigate(Screen.Welcome) }, vm) { f, g -> vm.configure(f, g, true); vm.beginLesson(0) }
+            Screen.Setup -> Configuration(progress, true, { vm.navigate(Screen.Welcome) }, vm) { f, g, detected -> vm.configure(f, g, true, detected); vm.beginLesson(0) }
             Screen.Home, Screen.Practice, Screen.Metronome, Screen.Notation, Screen.Settings -> Scaffold(containerColor = Paper,
                 bottomBar = { BottomNavigation(screen) { if (it == Screen.Settings) vm.openSettings() else vm.navigate(it) } }) { padding ->
-                Box(Modifier.padding(padding)) { tabs.SaveableStateProvider(screen.name) {
+                // My flute stays out of the tab cache: leaving it discards unsaved edits, as before.
+                Box(Modifier.padding(padding)) { if (screen == Screen.Settings) Configuration(progress, false, vm::closeSettings, vm) { f, g, detected -> vm.configure(f, g, false, detected) }
+                else tabs.SaveableStateProvider(screen.name) {
                     when (screen) {
                         Screen.Home -> HomeScreen(progress, vm::beginLesson, vm::openSettings, vm::startWarmup, { vm.navigate(Screen.Metronome) })
                         Screen.Practice -> StudioScreen(vm, progress, vm::openSettings)
                         Screen.Metronome -> ToolsScreen(progress.flute, vm::addRhythmPractice)
                         Screen.Notation -> NotationScreen(progress.flute)
-                        Screen.Settings -> Configuration(progress, false, vm::closeSettings, vm) { f, g -> vm.configure(f, g, false) }
                         else -> Unit
                     }
                 } }
@@ -117,7 +117,7 @@ class MainActivity : ComponentActivity() {
                 }, vm.lessonIndex.value == lessons.lastIndex, vm::setReminder, vm::declineReminder, vm::openSettings, vm::dismissTunePrompt)
             }
         }
-    } }
+    }
     if (exitLesson) AlertDialog(onDismissRequest = { exitLesson = false },
         title = { Text("Leave this lesson?") }, text = { Text("This session will not be counted. Your completed lessons are saved." +
             if (progress.streakAtRisk) " Finish a lesson today to keep your ${progress.streak}-day streak." else "") },

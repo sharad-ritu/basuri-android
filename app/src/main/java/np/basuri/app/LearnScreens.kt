@@ -34,7 +34,8 @@ internal fun todaysLesson(progress: Progress): Int = progress.nextLessonIndex.ta
 @Composable internal fun HomeScreen(progress: Progress, onLesson: (Int) -> Unit, onSettings: () -> Unit, onWarmup: () -> Unit, onTools: () -> Unit) {
     val next = progress.nextLessonIndex
     val currentUnit = lessons.getOrNull(next)?.unit ?: courses.last().id
-    var expanded by rememberSaveable { mutableStateOf("$currentUnit") }
+    // Keyed on the current unit so finishing a unit opens the next one, even with Home's state kept between tabs.
+    var expanded by rememberSaveable(currentUnit) { mutableStateOf("$currentUnit") }
     val open = expanded.split(',').mapNotNull { it.toIntOrNull() }.toSet()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
         Row(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 18.dp), verticalAlignment = Alignment.CenterVertically) {

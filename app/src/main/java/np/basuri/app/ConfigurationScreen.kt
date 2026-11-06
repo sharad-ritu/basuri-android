@@ -34,7 +34,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /** Onboarding (two pages) and the My flute tab share the Sa and goal controls. */
-@Composable internal fun Configuration(progress: Progress, onboarding: Boolean, onBack: () -> Unit, vm: BasuriViewModel, onSave: (Flute, Int) -> Unit) {
+@Composable internal fun Configuration(progress: Progress, onboarding: Boolean, onBack: () -> Unit, vm: BasuriViewModel, onSave: (Flute, Int, Boolean) -> Unit) {
     var pitchClass by rememberSaveable(progress.flute) { mutableIntStateOf(progress.flute.pitchClass) }
     var octave by rememberSaveable(progress.flute) { mutableIntStateOf(progress.flute.octave) }
     var cents by rememberSaveable(progress.flute) { mutableIntStateOf(progress.flute.cents) }
@@ -67,7 +67,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
     var help by remember { mutableStateOf(false) }
     var reset by remember { mutableStateOf(false) }
     val flute = Flute(pitchClass, octave, cents)
-    val dirty = flute != progress.flute || goal != progress.dailyGoal
+    // A fresh detection that confirms the saved Sa still needs a Save, to record that the flute is tuned.
+    val dirty = flute != progress.flute || goal != progress.dailyGoal || (heard != null && !progress.tunePromptDone)
     val scroll = rememberScrollState()
     LaunchedEffect(page) { scroll.scrollTo(0) }
     BackHandler(onboarding && page > 0) { page = 0 }
@@ -91,7 +92,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
                         Text(flute.label, color = Indigo, style = MaterialTheme.typography.titleLarge)
                     }
                     Spacer(Modifier.height(12.dp))
-                    SaDetector(detection, heard, flute, onboarding, detect, vm::stopAudio)
+                    SaDetector(detection, heard, flute, onboarding || flute != progress.flute || !progress.tunePromptDone, onboarding, detect, vm::stopAudio)
                     Text("Or choose it yourself", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 10.dp))
                     pitchNames.chunked(4).forEachIndexed { row, names ->
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -167,7 +168,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
             Surface(color = Paper) {
                 Column(Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
                     PrimaryButton(if (!onboarding) "Save changes" else if (page == 0) "Continue" else "Start my first lesson", {
-                        if (onboarding && page == 0) { vm.stopAudio(); page = 1 } else onSave(flute, goal)
+                        if (onboarding && page == 0) { vm.stopAudio(); page = 1 } else onSave(flute, goal, heard != null)
                     })
                 }
             }
@@ -280,7 +281,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 }
 
 /** Microphone Sa detection: play the three-hole Sa and Basuri sets the nearest note, octave, and tuning. */
-@Composable private fun SaDetector(detection: SaDetection, heard: Double?, flute: Flute, onboarding: Boolean, onDetect: () -> Unit, onStop: () -> Unit) {
+@Composable private fun SaDetector(detection: SaDetection, heard: Double?, flute: Flute, needsSave: Boolean, onboarding: Boolean, onDetect: () -> Unit, onStop: () -> Unit) {
     Surface(color = Mist, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
         Column(Modifier.padding(14.dp)) {
             if (detection is SaDetection.Listening) {
@@ -302,7 +303,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
                 detection is SaDetection.Failed -> Text(detection.message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 4.dp).semantics { liveRegion = LiveRegionMode.Polite })
                 heard != null -> Text("Heard ${"%.1f".format(heard)} Hz: Sa is ${flute.label}" + (if (flute.cents != 0) ", ${flute.tuningLabel}" else "") +
-                    ". ${if (onboarding) "Continue" else "Save changes"} to keep it.", color = Green, style = MaterialTheme.typography.bodyMedium,
+                    if (!needsSave) ". That matches your saved Sa." else ". ${if (onboarding) "Continue" else "Save changes"} to keep it.", color = Green, style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 4.dp).semantics { liveRegion = LiveRegionMode.Polite })
                 else -> Text("Play your three-hole Sa and Basuri will find its note and tune every reference to your flute.", color = Muted,
                     style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))

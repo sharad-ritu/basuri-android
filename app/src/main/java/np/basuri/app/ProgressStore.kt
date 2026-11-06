@@ -39,6 +39,11 @@ data class Progress(
     val goalBonusDays: Set<LocalDate> = emptySet(),
     /** Sa came from the microphone, or the learner declined the offer to tune; either way, don't ask again. */
     val tunePromptDone: Boolean = false,
+    /**
+     * The day this was loaded. Not saved: it makes a reload on a new day compare unequal, so StateFlow
+     * emits and every date-dependent screen redraws without resetting the screen's own state.
+     */
+    val asOf: LocalDate = LocalDate.now(),
 ) {
     val today: LocalDate get() = LocalDate.now()
     val warmedUp: Boolean get() = today in warmupDays
