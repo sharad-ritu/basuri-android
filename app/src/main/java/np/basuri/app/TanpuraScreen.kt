@@ -21,6 +21,7 @@ import kotlin.math.roundToInt
     val engine = remember(context, focus) { TanpuraEngine(context, focus) }
     val status by engine.status.collectAsStateWithLifecycle()
     val active = status is TanpuraStatus.Starting || status is TanpuraStatus.Playing
+    KeepScreenOn(active)
     var stringName by rememberSaveable { mutableStateOf(TanpuraString.Pa.name) }
     val string = TanpuraString.valueOf(stringName)
     var lowerOctave by rememberSaveable { mutableStateOf(false) }

@@ -196,7 +196,8 @@ import kotlin.math.*
     var help by remember { mutableStateOf(false) }
     val notes = progress.unlockedNotes
     LaunchedEffect(notes) { if (note !in notes) vm.chooseNote(Swar.Sa) }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
+    Column(Modifier.fillMaxSize()) {
+    Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
         Row(Modifier.fillMaxWidth().padding(top = 16.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("Practice", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.weight(1f).semantics { heading() })
             IconButton({ help = true }) { Icon(Icons.AutoMirrored.Rounded.HelpOutline, "Practice help", tint = Muted) }
@@ -217,13 +218,17 @@ import kotlin.math.*
         Spacer(Modifier.height(14.dp))
         AudioError(audio)
         if (longTone) LongToneCard(progress, note, audio, lastHold) else PracticeCard(progress.flute, note, audio, matched)
-        Spacer(Modifier.height(16.dp))
-        ListeningControls(note, audio, vm::playReference, vm::stopAudio, listen)
-        TextButton(onSettings, modifier = Modifier.heightIn(min = 48.dp).align(Alignment.CenterHorizontally)) {
+        TextButton(onSettings, modifier = Modifier.heightIn(min = 48.dp).padding(top = 4.dp).align(Alignment.CenterHorizontally)) {
             Icon(Icons.Rounded.Tune, null, Modifier.size(17.dp))
-            Text("Sa ${progress.flute.label} · Change flute", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 7.dp))
+            Text("Sa ${progress.flute.label}${if (progress.flute.cents != 0) " ${"%+d".format(progress.flute.cents)}¢" else ""} · Change flute",
+                style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 7.dp))
         }
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(8.dp))
+    }
+    // Pinned like the lesson footer, so Hear and Listen stay in reach while both hands hold the flute.
+    Surface(color = Paper) {
+        Box(Modifier.padding(horizontal = 20.dp, vertical = 10.dp)) { ListeningControls(note, audio, vm::playReference, vm::stopAudio, listen) }
+    }
     }
     if (help) HelpSheet("Your practice room", { help = false }) { PracticeExplanation(progress.flute, audio, note) }
 }
@@ -253,8 +258,15 @@ import kotlin.math.*
     val reading = listening?.reading
     val cents = (reading as? PitchReading.Tone)?.let { 1200 * ln(it.hz / progress.flute.frequency(note)) / ln(2.0) }
     val hold = listening?.holdMs ?: 0
-    val steady = hold > 0
+    val onPitch = cents != null && abs(cents) <= LONG_TONE_CENTS
+    // During the forgiven wobble the timer pauses; say so instead of claiming the note is steady.
+    val steady = hold > 0 && onPitch
+    val paused = hold > 0 && !onPitch
     val color by animateColorAsState(if (steady) Green else Indigo, label = "Long tone color")
+    // A felt and spoken cue at 5 s (today's warm-up) and 8 s (the goal), for a learner watching their fingers.
+    val milestone = when { hold >= BasuriViewModel.LONG_TONE_GOAL -> 2; hold >= Progress.WARMUP_MS -> 1; else -> 0 }
+    val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
+    LaunchedEffect(milestone) { if (milestone > 0) haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress) }
     Surface(color = Color.White, shape = RoundedCornerShape(24.dp), border = BorderStroke(1.dp, if (steady) Green.copy(.5f) else Color(0xFFE0E5F1))) {
         Column(Modifier.fillMaxWidth().padding(16.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -264,6 +276,8 @@ import kotlin.math.*
                     Text(notePitchLabel(progress.flute, note), style = MaterialTheme.typography.titleLarge, color = Indigo)
                 }
             }
+            Text(fingeringCue(note), color = Muted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 2.dp, bottom = 10.dp))
+            Fingering(note)
             Box(Modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(progress = { (hold / BasuriViewModel.LONG_TONE_GOAL.toFloat()).coerceIn(0f, 1f) }, color = color, trackColor = Mist,
                     strokeWidth = 7.dp, modifier = Modifier.size(120.dp))
@@ -274,7 +288,10 @@ import kotlin.math.*
                     Text("seconds", color = Muted, style = MaterialTheme.typography.labelMedium)
                 }
             }
-            PitchMeter(cents, color)
+            if (milestone > 0) Text(if (milestone == 2) "8 seconds. Goal reached." else "5 seconds. Today's warm-up is done.",
+                color = Green, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp).semantics { liveRegion = LiveRegionMode.Polite })
+            PitchMeter(cents, color, LONG_TONE_CENTS)
             Row(Modifier.fillMaxWidth().padding(top = 14.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                 Stat("Last hold", if (lastHold > 0) "%.1f s".format(lastHold / 1000f) else "—")
                 Stat("Best ever", if (progress.bestHoldMs > 0) "%.1f s".format(progress.bestHoldMs / 1000f) else "—")
@@ -282,6 +299,7 @@ import kotlin.math.*
             }
             Text(when {
                 listening == null -> "Start listening, then play ${note.spoken} softly and steadily. Aim for 8 seconds; 5 seconds counts as today's warm-up."
+                paused -> "Hold paused. Ease back to the center to keep timing."
                 reading is PitchReading.Tone && !steady -> "Find the center of the meter, then hold it."
                 steady -> "Steady. Keep the air relaxed and even."
                 else -> "Play one comfortable note."
@@ -302,14 +320,22 @@ import kotlin.math.*
     val cents = (reading as? PitchReading.Tone)?.let { 1200 * ln(it.hz / flute.frequency(note)) / ln(2.0) }
     val held = if (matched) 1f else (audio as? AudioStatus.Listening)?.held ?: 0f
     val listening = audio is AudioStatus.Listening
-    val onTarget = cents != null && abs(cents) <= 35
+    val onTarget = cents != null && abs(cents) <= MATCH_CENTS
+    // An octave miss is usually breath, not setup: overblown notes heard low need faster air, plain notes heard high need gentler air.
+    val octaveMiss = reading is PitchReading.Tone && abs(cents ?: 0.0) > 900
+    val octaveHint = when {
+        !octaveMiss -> null
+        (cents ?: 0.0) < 0 && note.overblown -> "Lower octave. Keep the fingering" to "Use a faster, narrower air stream to jump up an octave."
+        (cents ?: 0.0) > 0 && !note.overblown -> "Upper octave. Use gentler air" to "Slow the air and relax your lips to drop down an octave."
+        else -> "Check your Sa octave" to "The octave must match your flute setup in My flute."
+    }
     val color by animateColorAsState(if (matched || onTarget) Green else Indigo, label = "Pitch feedback color")
     val title = when {
         audio is AudioStatus.Playing -> "Listen to the reference"
         selfGuided -> "Practice at your own pace"
         matched -> "You matched ${note.spoken}"
         reading is PitchReading.Tone && onTarget -> "On target. Hold it here."
-        reading is PitchReading.Tone && abs(cents ?: 0.0) > 900 -> "Check your Sa octave"
+        octaveHint != null -> octaveHint.first
         reading is PitchReading.Tone && (cents ?: 0.0) < 0 -> "Below the target"
         reading is PitchReading.Tone -> "Above the target"
         reading is PitchReading.Unclear -> "No clear pitch yet"
@@ -321,7 +347,7 @@ import kotlin.math.*
         audio is AudioStatus.Playing -> "The microphone is off during playback."
         selfGuided -> "Confirm below when you've tried the note."
         matched -> "A steady pitch near your reference."
-        reading is PitchReading.Tone && abs(cents ?: 0.0) > 900 -> "The octave must match your flute setup."
+        octaveHint != null -> octaveHint.second
         reading is PitchReading.Tone -> "Compare with the reference. Rest and try again."
         reading is PitchReading.Unclear -> "Try one note in a quieter room."
         listening -> "No pitch yet. Play one comfortable note."
@@ -363,7 +389,8 @@ import kotlin.math.*
     }
 }
 
-@Composable private fun PitchMeter(cents: Double?, color: Color) {
+/** The ±cents band that counts as on target: 35 for a pitch match, 50 for a long tone. */
+@Composable private fun PitchMeter(cents: Double?, color: Color, tolerance: Double = MATCH_CENTS) {
     val position by animateFloatAsState(((cents ?: 0.0).coerceIn(-100.0, 100.0) / 100).toFloat(), label = "Pitch position")
     Column(Modifier.fillMaxWidth().semantics(mergeDescendants = true) {
         contentDescription = if (cents == null) "Pitch meter, no measurement" else "Pitch ${cents.roundToInt()} cents from reference"
@@ -372,7 +399,8 @@ import kotlin.math.*
             val center = size.width / 2
             val half = center - 8.dp.toPx()
             val y = size.height / 2
-            drawRoundRect(GreenWash, Offset(center - half * .35f, 0f), androidx.compose.ui.geometry.Size(half * .7f, size.height), androidx.compose.ui.geometry.CornerRadius(8.dp.toPx()))
+            val band = (tolerance / 100).toFloat()
+            drawRoundRect(GreenWash, Offset(center - half * band, 0f), androidx.compose.ui.geometry.Size(half * band * 2, size.height), androidx.compose.ui.geometry.CornerRadius(8.dp.toPx()))
             drawLine(Color(0xFFB4BED6), Offset(8.dp.toPx(), y), Offset(size.width - 8.dp.toPx(), y), 2.dp.toPx())
             (-2..2).forEach { tick ->
                 val x = center + tick * half / 2
@@ -448,5 +476,8 @@ import kotlin.math.*
     Text("No reading? Try one note in a quieter room. Check microphone permission and Android's microphone privacy switch. Basuri cannot tell why an unclear sound was missed.", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 16.dp))
     Text("This meter checks pitch only. It cannot identify your instrument or assess your embouchure, finger placement, tone quality, rhythm, or smoothness. Free practice does not add a lesson completion.", style = MaterialTheme.typography.bodyMedium, color = Muted, modifier = Modifier.padding(top = 16.dp))
 }
+
+private const val MATCH_CENTS = 35.0
+private const val LONG_TONE_CENTS = 50.0
 
 private fun notePitchLabel(flute: Flute, note: Swar): String = flute.pitchLabel(note)

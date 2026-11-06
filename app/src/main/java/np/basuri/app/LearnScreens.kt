@@ -225,7 +225,7 @@ private fun clock(seconds: Long) = "${seconds / 60}:${(seconds % 60).toString().
 }
 
 @Composable internal fun CompletionScreen(progress: Progress, lesson: Lesson, summary: SessionSummary, onHome: () -> Unit, onNext: () -> Unit, isLast: Boolean,
-                                         onReminder: (Int) -> Unit, onDeclineReminder: () -> Unit) {
+                                         onReminder: (Int) -> Unit, onDeclineReminder: () -> Unit, onTune: () -> Unit, onDeclineTune: () -> Unit) {
     val index = lessons.indexOf(lesson)
     val nextLesson = lessons.getOrNull(index + 1)
     val newUnit = nextLesson != null && nextLesson.unit != lesson.unit
@@ -245,7 +245,24 @@ private fun clock(seconds: Long) = "${seconds / 60}:${(seconds % 60).toString().
                     Text("Saved on this device. Self-guided notes have no microphone result.", color = Muted, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 12.dp))
                 }
             }
-            if (progress.reminderMinutes < 0 && !progress.reminderOffered) {
+            // One prompt at a time: tuning first (it makes every pitch check fairer), then the reminder offer.
+            if (!progress.tunePromptDone) {
+                Surface(color = Mist, shape = RoundedCornerShape(20.dp), modifier = Modifier.padding(top = 16.dp)) {
+                    Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Rounded.Mic, null, tint = Indigo)
+                            Text("Tune Basuri to your flute", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(start = 10.dp))
+                        }
+                        Text("Now that you can play Sa, let the microphone find its exact pitch. Every reference and pitch check will then match your flute.",
+                            color = Muted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 6.dp, bottom = 10.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(onTune, shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = Indigo),
+                                modifier = Modifier.heightIn(min = 48.dp)) { Text("Tune to my flute") }
+                            TextButton(onDeclineTune, modifier = Modifier.heightIn(min = 48.dp)) { Text("Not now") }
+                        }
+                    }
+                }
+            } else if (progress.reminderMinutes < 0 && !progress.reminderOffered) {
                 Surface(color = Mist, shape = RoundedCornerShape(20.dp), modifier = Modifier.padding(top = 16.dp)) {
                     Column(Modifier.fillMaxWidth().padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {

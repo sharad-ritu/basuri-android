@@ -67,10 +67,16 @@ class BasuriViewModel(application: Application, private val saved: SavedStateHan
     val currentNote: Swar get() = if (screen.value == Screen.Practice) practiceNote.value else currentLesson.notes[(step.value - 1).coerceIn(currentLesson.notes.indices)]
     /** Every save first applies any streak freezes due today, so a stale in-memory day can't undo them. */
     private fun persist(progress: Progress) { val p = progress.withFreezesApplied(); store.save(p); _progress.value = p }
-    fun refreshDay() { _progress.value = store.load() }
+    private val _today = MutableStateFlow(LocalDate.now())
+    /** The current day. [Progress] equality ignores the date, so date-dependent UI keys off this instead. */
+    val today = _today.asStateFlow()
+    fun refreshDay() { _progress.value = store.load(); _today.value = LocalDate.now() }
+    /** The last Sa the microphone found, so saving it can count as tuned. */
+    private var lastDetected: Flute? = null
     fun configure(flute: Flute, goal: Int, finishOnboarding: Boolean) {
         stopAudio()
-        persist(_progress.value.copy(flute = flute, dailyGoal = goal, onboarded = _progress.value.onboarded || finishOnboarding))
+        val p = _progress.value
+        persist(p.copy(flute = flute, dailyGoal = goal, onboarded = p.onboarded || finishOnboarding, tunePromptDone = p.tunePromptDone || flute == lastDetected))
         navigate(if (finishOnboarding) Screen.Home else saved.get<Screen>("settingsReturn") ?: Screen.Home)
     }
     /** Metronome sessions shorter than ten seconds are treated as a test tap, not practice. */
@@ -90,6 +96,9 @@ class BasuriViewModel(application: Application, private val saved: SavedStateHan
     fun setStreakSaver(on: Boolean) = updateReminders(_progress.value.copy(streakSaver = on))
     fun setWeeklyRecap(on: Boolean) = updateReminders(_progress.value.copy(weeklyRecap = on))
     fun declineReminder() = persist(_progress.value.copy(reminderOffered = true))
+    fun dismissTunePrompt() = persist(_progress.value.copy(tunePromptDone = true))
+    /** Today's warm-up starts on Sa, the most comfortable note, whatever was chosen last time. */
+    fun startWarmup() { saved["longTone"] = true; saved["note"] = Swar.Sa; navigate(Screen.Practice) }
     private fun updateReminders(progress: Progress) { persist(progress); Reminders.scheduleAll(getApplication(), progress) }
     fun sendTestReminder() = Reminders.notify(getApplication(), _progress.value, test = true)
     fun resetProgress() { stopAudio(); persist(store.reset(_progress.value)); navigate(Screen.Home) }
@@ -100,7 +109,7 @@ class BasuriViewModel(application: Application, private val saved: SavedStateHan
         Reminders.dismiss(getApplication())
         when (target) {
             Reminders.OPEN_LESSON -> beginLesson(_progress.value.nextLessonIndex.takeIf { it >= 0 } ?: 0)
-            Reminders.OPEN_WARMUP -> { saved["longTone"] = true; navigate(Screen.Practice) }
+            Reminders.OPEN_WARMUP -> startWarmup()
             else -> navigate(Screen.Home)
         }
     }
@@ -223,7 +232,7 @@ class BasuriViewModel(application: Application, private val saved: SavedStateHan
                             withContext(Dispatchers.Main) {
                                 if (token != generation) return@withContext
                                 _saDetection.value = when {
-                                    result != null -> Flute.fromFrequency(result)?.let { SaDetection.Found(it, result) }
+                                    result != null -> Flute.fromFrequency(result)?.let { lastDetected = it; SaDetection.Found(it, result) }
                                         ?: SaDetection.Failed("Heard ${"%.0f".format(result)} Hz, which is outside C3–B5. Check that you played the three-hole Sa without overblowing.")
                                     timedOut -> SaDetection.Failed("No steady note yet. Close holes 1–3, blow gently, and hold the note for two seconds.")
                                     else -> { SaDetection.Listening((run.size / SA_FRAMES.toFloat()).coerceAtMost(1f), hz); return@withContext }

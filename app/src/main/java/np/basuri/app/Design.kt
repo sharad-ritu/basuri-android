@@ -180,3 +180,23 @@ private val type = Typography(
         drawPath(lip, Ink, style = Stroke(3.dp.toPx(), cap = StrokeCap.Round))
     }
 }
+
+/** Views currently held awake, counted so two tools playing together don't release each other's hold. */
+private val screenOnHolds = java.util.WeakHashMap<android.view.View, Int>()
+
+/**
+ * Keeps the display on while [active], so a learner holding the flute doesn't lose the metronome,
+ * tanpura, or microphone to the screen timeout. Audio still stops when the app leaves the foreground.
+ */
+@Composable fun KeepScreenOn(active: Boolean) {
+    val view = androidx.compose.ui.platform.LocalView.current
+    androidx.compose.runtime.DisposableEffect(view, active) {
+        if (!active) return@DisposableEffect onDispose {}
+        screenOnHolds[view] = (screenOnHolds[view] ?: 0) + 1
+        view.keepScreenOn = true
+        onDispose {
+            val left = (screenOnHolds[view] ?: 1) - 1
+            if (left <= 0) { screenOnHolds.remove(view); view.keepScreenOn = false } else screenOnHolds[view] = left
+        }
+    }
+}

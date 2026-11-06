@@ -60,6 +60,18 @@ class MainActivity : ComponentActivity() {
 @Composable private fun BasuriApp(vm: BasuriViewModel) {
     val progress by vm.progress.collectAsStateWithLifecycle()
     val screen by vm.screen.collectAsStateWithLifecycle()
+    val today by vm.today.collectAsStateWithLifecycle()
+    val audio by vm.audio.collectAsStateWithLifecycle()
+    val detecting = vm.saDetection.collectAsStateWithLifecycle().value is SaDetection.Listening
+    KeepScreenOn(audio is AudioStatus.Listening || audio is AudioStatus.Playing || detecting)
+    // Roll the checklist, streak, and calendar over at midnight while the app stays open.
+    LaunchedEffect(today) {
+        val midnight = today.plusDays(1).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+        kotlinx.coroutines.delay((midnight - System.currentTimeMillis()).coerceAtLeast(0) + 1000)
+        vm.refreshDay()
+    }
+    // Each tab keeps its own saved state (metronome tempo, tanpura string, notation section) while you switch away.
+    val tabs = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
     val owner = LocalLifecycleOwner.current
     var exitLesson by remember { mutableStateOf(false) }
     DisposableEffect(owner) {
@@ -78,22 +90,23 @@ class MainActivity : ComponentActivity() {
             else -> vm.navigate(Screen.Home)
         }
     }
-    Box(Modifier.fillMaxSize().background(if (screen == Screen.Welcome) Ink else Paper).safeDrawingPadding()) {
+    // A new day recomposes everything that reads LocalDate.now(), even when saved progress is unchanged.
+    key(today) { Box(Modifier.fillMaxSize().background(if (screen == Screen.Welcome) Ink else Paper).safeDrawingPadding()) {
         when (screen) {
             Screen.Welcome -> WelcomeScreen { vm.navigate(Screen.Setup) }
             Screen.Setup -> Configuration(progress, true, { vm.navigate(Screen.Welcome) }, vm) { f, g -> vm.configure(f, g, true); vm.beginLesson(0) }
             Screen.Home, Screen.Practice, Screen.Metronome, Screen.Notation, Screen.Settings -> Scaffold(containerColor = Paper,
                 bottomBar = { BottomNavigation(screen) { if (it == Screen.Settings) vm.openSettings() else vm.navigate(it) } }) { padding ->
-                Box(Modifier.padding(padding)) {
+                Box(Modifier.padding(padding)) { tabs.SaveableStateProvider(screen.name) {
                     when (screen) {
-                        Screen.Home -> HomeScreen(progress, vm::beginLesson, vm::openSettings, { vm.setLongTone(true); vm.navigate(Screen.Practice) }, { vm.navigate(Screen.Metronome) })
+                        Screen.Home -> HomeScreen(progress, vm::beginLesson, vm::openSettings, vm::startWarmup, { vm.navigate(Screen.Metronome) })
                         Screen.Practice -> StudioScreen(vm, progress, vm::openSettings)
                         Screen.Metronome -> ToolsScreen(progress.flute, vm::addRhythmPractice)
                         Screen.Notation -> NotationScreen(progress.flute)
                         Screen.Settings -> Configuration(progress, false, vm::closeSettings, vm) { f, g -> vm.configure(f, g, false) }
                         else -> Unit
                     }
-                }
+                } }
             }
             Screen.Lesson -> LessonScreen(vm, progress) { vm.stopAudio(); exitLesson = true }
             Screen.Complete -> {
@@ -101,10 +114,10 @@ class MainActivity : ComponentActivity() {
                 CompletionScreen(progress, vm.currentLesson, summary, { vm.navigate(Screen.Home) }, {
                     val index = vm.lessonIndex.value + 1
                     if (index < lessons.size) vm.beginLesson(index) else vm.navigate(Screen.Practice)
-                }, vm.lessonIndex.value == lessons.lastIndex, vm::setReminder, vm::declineReminder)
+                }, vm.lessonIndex.value == lessons.lastIndex, vm::setReminder, vm::declineReminder, vm::openSettings, vm::dismissTunePrompt)
             }
         }
-    }
+    } }
     if (exitLesson) AlertDialog(onDismissRequest = { exitLesson = false },
         title = { Text("Leave this lesson?") }, text = { Text("This session will not be counted. Your completed lessons are saved." +
             if (progress.streakAtRisk) " Finish a lesson today to keep your ${progress.streak}-day streak." else "") },

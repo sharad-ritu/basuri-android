@@ -233,6 +233,7 @@ private enum class NotationSection(val label: String) {
         is NotationPlayback.Playing -> state.exampleIndex
         else -> null
     }
+    KeepScreenOn(activeExample != null)
     var currentBeat by remember(player) { mutableIntStateOf(-1) }
     val examples = remember { notationExamples }
 

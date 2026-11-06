@@ -82,8 +82,22 @@ object Reminders {
         if (at != null) alarms.setWindow(AlarmManager.RTC_WAKEUP, at.toInstant().toEpochMilli(), 10 * 60 * 1000L, intent)
     }
 
+    /** Idempotent. Done up front so each reminder type has its own switch in Android settings from the start. */
+    private fun createChannels(context: Context) {
+        val manager = context.getSystemService(NotificationManager::class.java)
+        Channel.entries.forEach { manager.createNotificationChannel(NotificationChannel(it.id, it.title, NotificationManager.IMPORTANCE_DEFAULT).apply { description = it.detail }) }
+    }
+
+    /** The id and name of the first reminder the learner uses but has turned off in Android's per-type settings. */
+    fun blockedChannel(context: Context, progress: Progress): Pair<String, String>? {
+        val manager = context.getSystemService(NotificationManager::class.java)
+        return listOfNotNull(Channel.Daily, Channel.Saver.takeIf { progress.streakSaver }, Channel.Weekly.takeIf { progress.weeklyRecap })
+            .firstOrNull { manager.getNotificationChannel(it.id)?.importance == NotificationManager.IMPORTANCE_NONE }?.let { it.id to it.title }
+    }
+
     /** Re-arms every alarm from saved settings. Safe to call at any time. */
     fun scheduleAll(context: Context, progress: Progress) {
+        createChannels(context)
         val on = progress.reminderMinutes >= 0
         set(context, ACTION_DAILY, 1, if (on) due(context, ACTION_DAILY, progress.reminderMinutes) else null)
         if (!on) set(context, ACTION_DAILY, SNOOZE_CODE, null)
@@ -107,7 +121,7 @@ object Reminders {
     private fun post(context: Context, channel: Channel, id: Int, title: String, text: String, actions: Boolean) {
         if (!canNotify(context)) return
         val manager = context.getSystemService(NotificationManager::class.java)
-        Channel.entries.forEach { manager.createNotificationChannel(NotificationChannel(it.id, it.title, NotificationManager.IMPORTANCE_DEFAULT).apply { description = it.detail }) }
+        createChannels(context)
         val builder = Notification.Builder(context, channel.id).setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title).setContentText(text).setStyle(Notification.BigTextStyle().bigText(text))
             .setContentIntent(open(context, if (actions) OPEN_LESSON else "home", 10 + id)).setAutoCancel(true).setColor(0xFF4C5FB5.toInt())

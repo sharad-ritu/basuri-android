@@ -37,6 +37,8 @@ data class Progress(
     val reminderOffered: Boolean = false,
     /** Days whose daily-goal XP bonus was already paid, so changing the goal can't pay it twice. */
     val goalBonusDays: Set<LocalDate> = emptySet(),
+    /** Sa came from the microphone, or the learner declined the offer to tune; either way, don't ask again. */
+    val tunePromptDone: Boolean = false,
 ) {
     val today: LocalDate get() = LocalDate.now()
     val warmedUp: Boolean get() = today in warmupDays
@@ -131,7 +133,7 @@ class ProgressStore(context: Context) {
             prefs.getBoolean("streakSaver", true), prefs.getBoolean("weeklyRecap", true),
             daySeconds(prefs.getString("rhythmDays", "")), dates("warmupDays"),
             prefs.getLong("bestHold", 0).coerceAtLeast(0), prefs.getBoolean("reminderOffered", false),
-            dates("goalBonusDays"),
+            dates("goalBonusDays"), prefs.getBoolean("tunePromptDone", false),
         )
         return loaded.withFreezesApplied().also { if (it != loaded) save(it) }
     }
@@ -148,7 +150,7 @@ class ProgressStore(context: Context) {
             .putString("rhythmDays", progress.rhythmDays.entries.joinToString(";") { "${it.key}=${it.value}" })
             .putString("goalBonusDays", progress.goalBonusDays.filter { it > LocalDate.now().minusDays(7) }.joinToString(";"))
             .putString("warmupDays", progress.warmupDays.joinToString(";")).putLong("bestHold", progress.bestHoldMs)
-            .putBoolean("reminderOffered", progress.reminderOffered)
+            .putBoolean("reminderOffered", progress.reminderOffered).putBoolean("tunePromptDone", progress.tunePromptDone)
             .apply()
     }
     private fun daySeconds(raw: String?) = raw.orEmpty().split(';').mapNotNull { entry ->
@@ -158,7 +160,8 @@ class ProgressStore(context: Context) {
     }.toMap()
     /** Keeps the flute and settings; clears lessons, history, XP, and achievements. */
     fun reset(progress: Progress): Progress = Progress(onboarded = true, flute = progress.flute, dailyGoal = progress.dailyGoal,
-        reminderMinutes = progress.reminderMinutes, streakSaver = progress.streakSaver, weeklyRecap = progress.weeklyRecap, reminderOffered = true)
+        reminderMinutes = progress.reminderMinutes, streakSaver = progress.streakSaver, weeklyRecap = progress.weeklyRecap, reminderOffered = true,
+        tunePromptDone = progress.tunePromptDone)
     private fun longestRun(days: Set<LocalDate>): Int {
         var best = 0
         days.forEach { day ->

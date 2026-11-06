@@ -44,12 +44,14 @@ import kotlin.math.roundToInt
     val engine = remember(context, focus) { MetronomeEngine(context, focus) { report(it) } }
     val status by engine.status.collectAsStateWithLifecycle()
     val active = status is MetronomeStatus.Starting || status is MetronomeStatus.Playing
+    KeepScreenOn(active)
     var bpm by rememberSaveable { mutableIntStateOf(80) }
     var taalMode by rememberSaveable { mutableStateOf(false) }
     var simpleBeats by rememberSaveable { mutableIntStateOf(4) }
     var taalId by rememberSaveable { mutableStateOf("teentaal") }
     var subdivisions by rememberSaveable { mutableIntStateOf(1) }
-    var timerMinutes by rememberSaveable { mutableIntStateOf(0) }
+    // Two minutes matches the daily riyaz item, so the metronome stops itself when that task is done.
+    var timerMinutes by rememberSaveable { mutableIntStateOf(2) }
     var trainerStep by rememberSaveable { mutableIntStateOf(0) }
     var sessionSettingsOpen by rememberSaveable { mutableStateOf(false) }
     val taal = taals.firstOrNull { it.id == taalId } ?: taals.first()
@@ -200,7 +202,7 @@ import kotlin.math.roundToInt
                 Text("The timer stops the metronome. The drone keeps playing.", color = Muted,
                     style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 4.dp))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(0, 1, 3, 5, 10).forEach { minutes ->
+                    listOf(0, 2, 5, 10, 15).forEach { minutes ->
                         MetronomeChoice(if (minutes == 0) "Off" else "$minutes min", timerMinutes == minutes, !active) {
                             timerMinutes = minutes; position = MetronomePosition()
                         }

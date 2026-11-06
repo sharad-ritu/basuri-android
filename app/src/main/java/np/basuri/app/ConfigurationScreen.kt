@@ -57,6 +57,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
         vm.clearSaDetection()
     }
     DisposableEffect(Unit) { onDispose { vm.clearSaDetection() } }
+    /** A hand-picked setting wins: stop any detection still listening so its result can't overwrite it. */
+    val manual: (() -> Unit) -> Unit = { change ->
+        if (detection is SaDetection.Listening) vm.stopAudio()
+        vm.clearSaDetection(); heard = null; change()
+    }
     var goal by rememberSaveable(progress.dailyGoal) { mutableIntStateOf(progress.dailyGoal) }
     var page by rememberSaveable { mutableIntStateOf(0) }
     var help by remember { mutableStateOf(false) }
@@ -92,16 +97,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             names.forEachIndexed { col, label ->
                                 val value = row * 4 + col
-                                Choice(label, value == pitchClass, { pitchClass = value; heard = null }, Modifier.weight(1f))
+                                Choice(label, value == pitchClass, { manual { pitchClass = value } }, Modifier.weight(1f))
                             }
                         }
                         Spacer(Modifier.height(8.dp))
                     }
                     Text("Octave", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 8.dp, bottom = 10.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        (3..5).forEach { value -> Choice("$value", value == octave, { octave = value; heard = null }, Modifier.weight(1f)) }
+                        (3..5).forEach { value -> Choice("$value", value == octave, { manual { octave = value } }, Modifier.weight(1f)) }
                     }
-                    FineTuning(cents) { cents = it; heard = null }
+                    FineTuning(cents) { manual { cents = it } }
                     Row(Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text("Sa ${flute.label} · ${"%.1f".format(flute.frequency(Swar.Sa))} Hz", color = Muted, style = MaterialTheme.typography.labelMedium, modifier = Modifier.weight(1f))
                         val playing = audio is AudioStatus.Playing
@@ -116,7 +121,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
                         Text("Not sure which note to choose?", modifier = Modifier.padding(start = 8.dp))
                     }
                 }
-                if (onboarding) Text("Not sure? G4 is a common starting choice. You can change it later in My flute.", color = Muted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 12.dp))
+                if (onboarding) Text("Can't play a steady note yet? Keep G4 for now. After your first lesson, Basuri will offer to tune to your flute.", color = Muted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 12.dp))
             }
             if (!onboarding || page == 1) {
                 if (onboarding) {
@@ -162,7 +167,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
             Surface(color = Paper) {
                 Column(Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
                     PrimaryButton(if (!onboarding) "Save changes" else if (page == 0) "Continue" else "Start my first lesson", {
-                        if (onboarding && page == 0) page = 1 else onSave(flute, goal)
+                        if (onboarding && page == 0) { vm.stopAudio(); page = 1 } else onSave(flute, goal)
                     })
                 }
             }
@@ -222,7 +227,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
     var resumes by remember { mutableIntStateOf(0) }
     LifecycleResumeEffect(Unit) { resumes++; onPauseOrDispose {} }
     val blocked = remember(on, resumes) { on && !Reminders.canNotify(context) }
-    var picking by remember { mutableStateOf(false) }
+    val offChannel = remember(on, resumes, progress.streakSaver, progress.weeklyRecap) { if (on && !blocked) Reminders.blockedChannel(context, progress) else null }
+    var picking by rememberSaveable { mutableStateOf(false) }
     if (picking) ReminderTimeDialog(if (on) minutes else Reminders.presets[2].first, { picking = false }) { picking = false; choose(it) }
     ToggleRow("Daily reminder", if (on) "Around ${Reminders.label(minutes)}, only if no lesson is done yet." else "A gentle nudge to keep your streak going.", on) {
         choose(if (it) Reminders.presets[2].first else -1)
@@ -251,6 +257,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
         TextButton({
             context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName))
         }, contentPadding = PaddingValues(horizontal = 0.dp)) { Text("Open notification settings") }
+    }
+    if (offChannel != null) {
+        Text("\u201c${offChannel.second}\u201d notifications are turned off in Android settings, so they can't appear.", color = MaterialTheme.colorScheme.error,
+            style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 10.dp))
+        TextButton({
+            context.startActivity(Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                .putExtra(Settings.EXTRA_CHANNEL_ID, offChannel.first))
+        }, contentPadding = PaddingValues(horizontal = 0.dp)) { Text("Turn on ${offChannel.second.lowercase()}") }
     }
     Text("Saved right away. Scheduled on this device only.", color = Muted, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 10.dp))
 }
