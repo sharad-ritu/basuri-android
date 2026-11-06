@@ -116,7 +116,7 @@ private enum class NotationSection(val label: String) {
                 if (index < NotationPitch.entries.lastIndex) HorizontalDivider(color = Mist)
             }
         }
-        Text("Pitch names use Basuri's equal-tempered reference, A4 = 440 Hz. Hindustani intonation is more flexible; these pitches are a beginner guide, not a rule for every raga.",
+        Text("Pitch names use Basuri's equal-tempered reference, A4 = 440 Hz. Classical and folk intonation is more flexible; these pitches are a beginner guide, not a rule for every raga.",
             color = Muted, style = MaterialTheme.typography.bodyMedium)
     }
 }

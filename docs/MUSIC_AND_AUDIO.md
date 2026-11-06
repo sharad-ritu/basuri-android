@@ -2,7 +2,7 @@
 
 ## Fingering and relative Sa
 
-Basuri teaches a standard six-hole Hindustani bansuri. Holes are counted from the blowing hole. Sa closes holes 1–3, shuddh Re closes 1–2, and shuddh Ga closes only hole 1. The other finger holes stay open. The blowing hole is separate from the six finger holes.
+Basuri teaches the six-hole Nepali basuri (बाँसुरी), which uses the same fingering as the six-hole Hindustani bansuri. Holes are counted from the blowing hole. Sa closes holes 1–3, shuddh Re closes 1–2, and shuddh Ga closes only hole 1. The other finger holes stay open. The blowing hole is separate from the six finger holes.
 
 The fingering was checked against the teacher-authored [Bansuri Academy swaras chart](https://bansuri.com/learn-bansuri/swaras-symbols/) and the maker's [Bansuri Australia beginner guidance](https://bansuriaustralia.com.au/beginners-tips/). [Dr. Kerry Kriger's Bhoopali lesson](https://bansuribliss.com/bhoopali/) also identifies the three-hole Sa and gives examples with different tonic pitches. Lesson copy is newly authored for this app.
 

@@ -6,7 +6,7 @@ import kotlin.math.pow
 enum class Octave(val prefix: String) { Mandra("low "), Madhya(""), Taar("high ") }
 
 /**
- * Notes on a standard six-hole Hindustani bansuri, counting holes from the blowing hole, with
+ * Notes on a standard six-hole Nepali basuri (the same fingering as a Hindustani bansuri), counting holes from the blowing hole, with
  * Sa as the top three holes closed. Mandra notes close more holes and need slower, warmer air.
  * Pa, Dha, Ni, and high Sa reuse a lower fingering with overblowing: a faster, narrower air stream.
  */

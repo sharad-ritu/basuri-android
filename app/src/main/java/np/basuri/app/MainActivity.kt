@@ -145,7 +145,7 @@ class MainActivity : ComponentActivity() {
         }
         Spacer(Modifier.height(12.dp))
         PrimaryButton("Get started", onBegin, gold = true)
-        Text("For a six-hole Hindustani bansuri", color = Color(0xFFD3DAED), style = MaterialTheme.typography.labelMedium,
+        Text("For a six-hole Nepali basuri", color = Color(0xFFD3DAED), style = MaterialTheme.typography.labelMedium,
             textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 16.dp))
     }
 }

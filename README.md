@@ -1,6 +1,6 @@
 # Basuri
 
-A native, offline Android app for learning the six-hole Hindustani bansuri day to day. Built with Kotlin and Jetpack Compose. It includes:
+A native, offline Android app for learning the six-hole Nepali basuri (बाँसुरी) day to day. Built with Kotlin and Jetpack Compose. It includes:
 
 - a 20-lesson course in six units, from a first sound to overblown high Sa and short tunes
 - a daily riyaz checklist, streaks, XP, and achievements

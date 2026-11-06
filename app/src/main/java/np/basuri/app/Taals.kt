@@ -11,7 +11,7 @@ data class Vibhag(val mark: TaalMark, val bols: List<String>, val taliNumber: In
 }
 
 /**
- * A Hindustani rhythm cycle. Shared by the metronome and the notation page so both describe
+ * A rhythm cycle shared by Nepali and Hindustani music. Shared by the metronome and the notation page so both describe
  * the same structure. Bols are the common tabla theka; they are a reference, not a lesson.
  */
 data class Taal(val id: String, val name: String, val vibhags: List<Vibhag>, val note: String = "") {
@@ -32,7 +32,7 @@ val taals = listOf(
         Vibhag(TaalMark.Tali, listOf("Dha", "Dhin", "Dhin", "Dha"), 2),
         Vibhag(TaalMark.Khali, listOf("Dha", "Tin", "Tin", "Ta")),
         Vibhag(TaalMark.Tali, listOf("Ta", "Dhin", "Dhin", "Dha"), 3),
-    ), "The most common cycle in Hindustani music."),
+    ), "The most common cycle in Nepali folk songs and Hindustani music."),
     Taal("keherwa", "Keherwa", listOf(
         Vibhag(TaalMark.Sam, listOf("Dha", "Ge", "Na", "Ti")),
         Vibhag(TaalMark.Khali, listOf("Na", "Ka", "Dhi", "Na")),

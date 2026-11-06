@@ -153,7 +153,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
                     }
                     val context = LocalContext.current
                     val version = remember { runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() }
-                    Text("Basuri ${version.orEmpty()} · For a six-hole Hindustani bansuri", color = Muted, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(vertical = 20.dp))
+                    Text("Basuri ${version.orEmpty()} · For a six-hole Nepali basuri", color = Muted, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(vertical = 20.dp))
                 }
                 Spacer(Modifier.height(12.dp))
             }
@@ -169,7 +169,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
         }
     }
     if (help) HelpSheet("Choosing your Sa", { help = false }) {
-        Text("Use a six-hole Hindustani bansuri. Count from the blowing hole: Sa closes holes 1–3, Re closes 1–2, and Ga closes only hole 1.", style = MaterialTheme.typography.bodyLarge)
+        Text("Use a six-hole Nepali basuri. Count from the blowing hole: Sa closes holes 1–3, Re closes 1–2, and Ga closes only hole 1.", style = MaterialTheme.typography.bodyLarge)
         Text("Printed flute labels can refer to an all-closed pipe note. Here, choose the actual sound of your three-hole Sa. Ask your maker or teacher if the label is unclear.", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 16.dp))
         Text("The easiest way is to let Basuri listen: close holes 1–3 and play one long, gentle note. It sets the nearest note and octave, and fine-tunes every reference to your flute.", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 16.dp))
         Text("Middle C is C4. The octave matters for pitch checking. References start from A4 = 440 Hz with equal temperament, shifted by your fine tuning. Many handmade flutes sit 10–30 cents away from concert pitch. Seven-hole variants and Carnatic venu need different guidance.", color = Muted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 16.dp))
