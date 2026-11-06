@@ -32,11 +32,11 @@ val taals = listOf(
         Vibhag(TaalMark.Tali, listOf("Dha", "Dhin", "Dhin", "Dha"), 2),
         Vibhag(TaalMark.Khali, listOf("Dha", "Tin", "Tin", "Ta")),
         Vibhag(TaalMark.Tali, listOf("Ta", "Dhin", "Dhin", "Dha"), 3),
-    ), "The most common cycle in Nepali folk songs and Hindustani music."),
+    ), "The most common cycle in Hindustani classical music."),
     Taal("keherwa", "Keherwa", listOf(
         Vibhag(TaalMark.Sam, listOf("Dha", "Ge", "Na", "Ti")),
         Vibhag(TaalMark.Khali, listOf("Na", "Ka", "Dhi", "Na")),
-    ), "A light eight-beat cycle used in folk and film songs."),
+    ), "A light eight-beat cycle heard in many Nepali folk songs, bhajans, and film songs."),
     Taal("dadra", "Dadra", listOf(
         Vibhag(TaalMark.Sam, listOf("Dha", "Dhi", "Na")),
         Vibhag(TaalMark.Khali, listOf("Dha", "Ti", "Na")),

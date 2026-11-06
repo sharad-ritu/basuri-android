@@ -150,7 +150,7 @@ private enum class NotationSection(val label: String) {
                 Text("Komal Ni in mandra saptak. The underline lowers Ni by a semitone; the dot moves it down an octave.", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
             }
         }
-        Text("Mandra and taar are relative to Sa, not to the octave number in a pitch name. These are reading examples; not every octave is practical on every bansuri.", color = Muted, style = MaterialTheme.typography.bodyMedium)
+        Text("Mandra and taar are relative to Sa, not to the octave number in a pitch name. These are reading examples; not every octave is practical on every basuri.", color = Muted, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
@@ -268,7 +268,7 @@ private enum class NotationSection(val label: String) {
             }
         }
         NotationHeading("Play along")
-        NotationBody("Hear the phrase at your flute's pitch. These are synthesized reference tones, not a recording of a bansuri.")
+        NotationBody("Hear the phrase at your flute's pitch. These are synthesized reference tones, not a recording of a basuri.")
         Text("Sa = ${flute.label} · Soft clicks mark each beat, with sam accented and khali quieter.",
             color = Indigo, style = MaterialTheme.typography.bodyMedium)
         Text("Tempo · beats per minute", style = MaterialTheme.typography.titleMedium)

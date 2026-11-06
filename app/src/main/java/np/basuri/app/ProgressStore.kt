@@ -98,7 +98,7 @@ object Levels {
         level == 4 -> "Gentle Ga"
         level <= 6 -> "Daily player"
         level <= 9 -> "Devoted student"
-        else -> "Bansuri regular"
+        else -> "Basuri regular"
     }
 }
 

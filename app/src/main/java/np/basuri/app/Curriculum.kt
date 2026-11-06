@@ -134,7 +134,7 @@ val lessons = listOf(
 
     Lesson("rise", "A longer climb", "Sa to high Sa, with Ma left out", 5, listOf(
         Guide("Begin the climb", "Play Sa, Re, Ga slowly with gentle air.",
-            "Aroh means an ascending sequence. This exercise leaves out Ma. All holes open gives tivra Ma on a standard bansuri. Shuddh Ma needs partial coverage of hole 1, which this course does not teach. This is not a complete scale.", GuidePicture.Phrase(listOf(Swar.Sa, Swar.Re, Swar.Ga), "3 closed   2   1 closed")),
+            "Aroh means an ascending sequence. This exercise leaves out Ma. All holes open gives tivra Ma on a standard six-hole basuri. Shuddh Ma needs partial coverage of hole 1, which this course does not teach. This is not a complete scale.", GuidePicture.Phrase(listOf(Swar.Sa, Swar.Re, Swar.Ga), "3 closed   2   1 closed")),
         Guide("Cross from Ga to Pa", "From Ga, cover all six holes and use focused air for Pa.",
             "This move changes several fingers and the air together. Try it silently first if needed, then take a fresh breath for Pa. There is a larger pitch gap here because Ma is omitted. Avoid rushing across it.", GuidePicture.Fingers(Swar.Pa)),
         Guide("Continue to high Sa", "Play Pa, Dha, Ni, high Sa with focused air.",

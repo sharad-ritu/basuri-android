@@ -134,7 +134,7 @@ class MainActivity : ComponentActivity() {
         }
         FluteArt(Modifier.fillMaxWidth().height(220.dp), diagonal = true)
         Text("Your first note\nstarts here.", style = MaterialTheme.typography.displayLarge, color = Color.White)
-        Text("Learn the bansuri in short, guided lessons. Just you, your flute, and a little practice.", style = MaterialTheme.typography.bodyLarge,
+        Text("Learn the basuri in short, guided lessons. Just you, your flute, and a little practice.", style = MaterialTheme.typography.bodyLarge,
             color = Color(0xFFD3DAED), modifier = Modifier.padding(top = 14.dp, bottom = 24.dp))
         listOf(Icons.Rounded.Route to "Short guided lessons, from first sound to a full octave", Icons.Rounded.Hearing to "Hear a note, then find it with live pitch feedback",
             Icons.Rounded.LocalFireDepartment to "A daily routine with streaks and reminders", Icons.Rounded.Lock to "Offline, with no account needed").forEach { (icon, text) ->

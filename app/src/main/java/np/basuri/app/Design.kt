@@ -72,7 +72,7 @@ private val type = Typography(
 
 /** A bamboo flute with a separate blowing hole and exactly six finger holes. */
 @Composable fun FluteArt(modifier: Modifier = Modifier, diagonal: Boolean = false) {
-    Canvas(modifier.clipToBounds().semantics { contentDescription = "Bamboo bansuri with a blowing hole and six finger holes" }) {
+    Canvas(modifier.clipToBounds().semantics { contentDescription = "Bamboo basuri with a blowing hole and six finger holes" }) {
         val w = size.width
         val h = size.height
         if (diagonal) {
